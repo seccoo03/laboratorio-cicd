@@ -1,0 +1,88 @@
+/* ==========================================================================
+   Stile Moderno Dark Mode - Laboratorio CI/CD
+   ========================================================================== */
+
+/* Reset di base e variabili di colore */
+:root {
+    --bg-color: #0f172a;       /* Blu notte scuro */
+    --card-bg: #1e293b;        /* Grigio/blu per i blocchi */
+    --text-main: #f8fafc;      /* Bianco opaco */
+    --text-muted: #94a3b8;     /* Grigio per i testi secondari */
+    --accent-color: #38bdf8;   /* Azzurro vivo per i link/accenti */
+    --success-color: #4ade80;  /* Verde per indicare il successo del deploy */
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-main);
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    line-height: 1.6;
+    padding: 20px;
+}
+
+/* Container principale per centrare e racchiudere il contenuto come una card */
+.container {
+    background-color: var(--card-bg);
+    padding: 2.5rem;
+    border-radius: 12px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+    max-width: 500px;
+    width: 100%;
+    text-align: center;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+h1 {
+    font-size: 2rem;
+    margin-bottom: 1rem;
+    color: var(--text-main);
+    font-weight: 700;
+}
+
+p {
+    color: var(--text-muted);
+    margin-bottom: 2rem;
+    font-size: 1.1rem;
+}
+
+/* Badge di stato per simulare il "Successo" della pipeline */
+.badge {
+    display: inline-block;
+    background-color: rgba(74, 222, 128, 0.1);
+    color: var(--success-color);
+    padding: 0.25rem 0.75rem;
+    border-radius: 50px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+    border: 1px solid rgba(74, 222, 128, 0.2);
+}
+
+/* Pulsante/Link stiloso */
+a {
+    display: inline-block;
+    color: var(--bg-color);
+    background-color: var(--accent-color);
+    text-decoration: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 6px;
+    font-weight: 600;
+    transition: all 0.2s ease-in-out;
+    box-shadow: 0 4px 12px rgba(56, 189, 248, 0.2);
+}
+
+a:hover {
+    background-color: #7dd3fc;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(56, 189, 248, 0.4);
+}
