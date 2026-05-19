@@ -1,0 +1,85 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+# Permessi necessari per scrivere su GHCR (Packages) e su GitHub Pages
+permissions:
+  contents: read
+  packages: write
+  pages: write
+  id-token: write
+
+jobs:
+  # ----------------------------------------------------------------
+  # JOB A: Quality Check
+  # ----------------------------------------------------------------
+  quality-check:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout del codice
+        uses: actions/checkout@v4
+
+      - name: HTML Hint (Linting)
+        uses: htmlhint/htmlhint-action@v2
+        with:
+          addresses: 'index.html'
+
+      - name: Link Checker
+        uses: lycheeverse/lychee-action@v2
+        with:
+          args: --verbose no-progress 'index.html'
+
+  # ----------------------------------------------------------------
+  # JOB B: Container Registry (Docker)
+  # ----------------------------------------------------------------
+  docker-registry:
+    runs-on: ubuntu-latest
+    needs: quality-check # Parte solo se il Job A ha successo
+    steps:
+      - name: Checkout del codice
+        uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry (GHCR)
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and Push Docker Image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          # Converte il nome utente in minuscolo per evitare errori con Docker/GHCR
+          tags: |
+            ghcr.io/${{ github.repository_owner }}/test-sito:latest
+
+  # ----------------------------------------------------------------
+  # JOB C: Deployment (GitHub Pages)
+  # ----------------------------------------------------------------
+  deploy:
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    runs-on: ubuntu-latest
+    needs: docker-registry # Parte solo se il Job B ha successo
+    steps:
+      - name: Checkout del codice
+        uses: actions/checkout@v4
+
+      - name: Setup Pages
+        uses: actions/configure-pages@v4
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: '.' # Carica l'intera cartella (contiene index.html e style.css)
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
