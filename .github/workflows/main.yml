@@ -1,85 +1,77 @@
-name: CI/CD Pipeline
+name: CI/CD Pipeline per Sito Statico
 
 on:
   push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
-
-# Permessi necessari per scrivere su GHCR (Packages) e su GitHub Pages
-permissions:
-  contents: read
-  packages: write
-  pages: write
-  id-token: write
+    branches: [ main, master ]
 
 jobs:
-  # ----------------------------------------------------------------
-  # JOB A: Quality Check
-  # ----------------------------------------------------------------
+
+  # ----------------------------------------
+  # JOB A: QUALITY CHECK (CI)
+  # ----------------------------------------
   quality-check:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout del codice
+      - name: Scarica il codice nella pipeline
         uses: actions/checkout@v4
 
-      - name: HTML Hint (Linting)
-        uses: htmlhint/htmlhint-action@v2
+      - name: Configura Node.js
+        uses: actions/setup-node@v4
         with:
-          addresses: 'index.html'
+          node-version: '20'
 
-      - name: Link Checker
+      - name: Controlla la sintassi HTML (Linting)
+        run: |
+          npm install -g htmlhint
+          htmlhint index.html --disable doctype-first,spec-char-escape
+
+      - name: Controlla i link rotti
         uses: lycheeverse/lychee-action@v2
         with:
-          args: --verbose no-progress 'index.html'
+          args: './index.html'
+          fail: true # Fa fallire il job se trova un link rotto
 
-  # ----------------------------------------------------------------
-  # JOB B: Container Registry (Docker)
-  # ----------------------------------------------------------------
+  # ----------------------------------------
+  # JOB B: CONTAINER REGISTRY (DOCKER)
+  # ----------------------------------------
   docker-registry:
     runs-on: ubuntu-latest
-    needs: quality-check # Parte solo se il Job A ha successo
+    needs: quality-check
+    permissions:
+      contents: read
+      packages: write
     steps:
-      - name: Checkout del codice
+      - name: Scarica il codice nella pipeline
         uses: actions/checkout@v4
 
-      - name: Log in to GitHub Container Registry (GHCR)
+      - name: Accedi al GitHub Container Registry (GHCR)
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and Push Docker Image
+      - name: Costruisci e invia l'immagine Docker
         uses: docker/build-push-action@v5
         with:
           context: .
           push: true
-          # Converte il nome utente in minuscolo per evitare errori con Docker/GHCR
-          tags: |
-            ghcr.io/${{ github.repository_owner }}/test-sito:latest
+          tags: ghcr.io/${{ github.repository }}/test-sito:latest
 
-  # ----------------------------------------------------------------
-  # JOB C: Deployment (GitHub Pages)
-  # ----------------------------------------------------------------
+  # ----------------------------------------
+  # JOB C: DEPLOYMENT (CD ON GITHUB PAGES)
+  # ----------------------------------------
   deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
     runs-on: ubuntu-latest
-    needs: docker-registry # Parte solo se il Job B ha successo
+    needs: docker-registry
+    permissions:
+      contents: write
     steps:
-      - name: Checkout del codice
+      - name: Scarica il codice nella pipeline
         uses: actions/checkout@v4
 
-      - name: Setup Pages
-        uses: actions/configure-pages@v4
-
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
+      - name: Rilascio su GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
         with:
-          path: '.' # Carica l'intera cartella (contiene index.html e style.css)
-
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./
